@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import scipy.sparse
 import scipy.stats
 from lab3lib import load_data, show_single_face, show_faces, partition_data, split_left_right, join_left_right, show_split_faces
-from knn import create_confusion_matrix
+from helper_methods import *
+
 def normalise_face_data(data):
     return data/255
 
