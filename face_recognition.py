@@ -103,7 +103,7 @@ def select_hyperparameter(tr_data, tr_label, lambdas, num_trials_per_lambda, ver
         print(avg_accs)
     return lambdas[np.argmin(avg_accs)]
 
-def experiment_4(data, labels):
+def classify_faces_experiment_4(data, labels):
     tr_data, tr_label, te_data, te_label = split_face_data(data, labels, 5)
 
     #Hyperparameter selection
@@ -125,7 +125,7 @@ def main():
     data = normalise_face_data(data)
     # tr_data, tr_label, te_data, te_label = split_face_data(data, labels)
     # print(l2_rls_train(tr_data, tr_label).shape)
-    print(experiment_4(data, labels))
+    print(classify_faces_experiment_4(data, labels))
 
 
 main()
