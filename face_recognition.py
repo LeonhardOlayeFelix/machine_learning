@@ -5,6 +5,8 @@ import scipy.stats
 from lab3lib import load_data, show_single_face, show_faces, partition_data, split_left_right, join_left_right, show_split_faces
 from helper_methods import *
 
+rng = np.random.default_rng()
+
 def normalise_face_data(data):
     return data/255
 
@@ -126,12 +128,21 @@ def classify_faces_experiment(data, labels):
     print(f"Confusion Matrix:\n{confusion_matrix}")
 
 def face_completion_experiment(data, labels):
+
     #Split data into left and right face
-    tr_data, tr_label, te_data, te_label = split_face_data(data, labels, 5)
-    tr_data, tr_label = split_left_right(tr_data)
-    te_data, te_label = split_left_right(te_data)
+    left, right = split_left_right(data)
 
+    #Training
+    train_idx, test_idx = partition_data(labels, 8)
+    w = l2_rls_train(left[train_idx], right[train_idx])
 
+    #Prediction
+    pred_right = l2_rls_predict(w, left[test_idx])
+
+    #Visualise predictions
+    faces_idx = rng.choice(test_idx.shape[0], 4, replace=False)
+    show_faces(join_left_right(left[test_idx][faces_idx], right[test_idx][faces_idx]), num_per_row=4)
+    show_faces(join_left_right(left[test_idx][faces_idx], pred_right[faces_idx]), num_per_row=4)
 
 def main():
     data, labels = load_data()
