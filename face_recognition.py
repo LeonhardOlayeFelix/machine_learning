@@ -25,22 +25,21 @@ def l2_rls_train(train_data, train_labels, lmbd=0, multi=False):  # Add any othe
 
     Returns: type and description of the returned variable(s).
     """
-
+    #Turn classes into one hot encoded matrix
+    X = train_data
     if multi:
         y = np.zeros((train_labels.shape[0], train_labels.max()))
         rows = np.arange(train_labels.shape[0])
         cols = train_labels-1
         y[rows, cols] =  1
-        pass
     else:
         y = train_labels
-    X = train_data
-    # Expand X with a column of ones.
+
+    #Expand X with a column of ones.
     ones = np.ones(X.shape[0])
     X_tilde = np.insert(X, 0, ones, axis=1)
 
-    # Compute the coefficient vector.
-
+    #Compute the coefficient vector.
     if lmbd == 0:
         pseudo_inverse = np.linalg.pinv(X_tilde)
     else:
@@ -133,6 +132,4 @@ def main():
     # tr_data, tr_label, te_data, te_label = split_face_data(data, labels)
     # print(l2_rls_train(tr_data, tr_label).shape)
     classify_faces_experiment_4(data, labels)
-
-
 main()

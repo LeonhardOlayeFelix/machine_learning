@@ -50,7 +50,7 @@ def show_faces(data, num_per_row=10, h=32, w=32):
     plt.figure()
     plt.imshow(img_grid, cmap='gray')
     plt.axis('off')
-
+    plt.show()
 
 def partition_data(labels, num_per_class):
     examples_per_class = {}
