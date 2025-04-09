@@ -94,5 +94,4 @@ def main():
     print(create_confusion_matrix(test_labels, predicted_labels))
 
 
-
-#print(knn_classify(A, B, np.random.randint(low=1, high=4, size=B.shape[0]), k=2))
+main()

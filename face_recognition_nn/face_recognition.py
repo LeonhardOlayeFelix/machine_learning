@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse
 import scipy.stats
-from lab3lib import load_data, show_single_face, show_faces, partition_data, split_left_right, join_left_right, show_split_faces
+from facelib import load_data, show_single_face, show_faces, partition_data, split_left_right, join_left_right, show_split_faces
 from helper_methods import *
 
 rng = np.random.default_rng()
@@ -156,5 +156,7 @@ def main():
     data, labels = load_data()
     data = normalise_face_data(data)
 
-    face_completion_experiment(data, labels)
+    #classify_faces_experiment(data, labels)
+    face_completion_experiment(data, labels, display_faces=True)
+
 main()
