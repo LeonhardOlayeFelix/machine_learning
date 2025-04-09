@@ -19,3 +19,6 @@ def create_confusion_matrix(true_labels, pred_labels, classes=None):
     np.add.at(cm, (true_idx, pred_idx), 1)
 
     return cm
+
+def mean_absolute_percentage_error(pred_labels, true_labels):
+    return np.sum(np.abs(pred_labels - true_labels) / np.abs(true_labels)) / (true_labels.shape[0] * true_labels.shape[1]) * 100

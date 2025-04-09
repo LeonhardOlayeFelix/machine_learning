@@ -127,22 +127,30 @@ def classify_faces_experiment(data, labels):
     print(f"Total Incorrect classifications: {len(incorrect_indexes[0])}")
     print(f"Confusion Matrix:\n{confusion_matrix}")
 
-def face_completion_experiment(data, labels):
+def face_completion_experiment(data, labels, display_faces=False):
 
     #Split data into left and right face
     left, right = split_left_right(data)
 
     #Training
-    train_idx, test_idx = partition_data(labels, 8)
-    w = l2_rls_train(left[train_idx], right[train_idx])
+    train_idx, test_idx = partition_data(labels, 5)
+    train_data, train_label = left[train_idx], right[train_idx]
+    test_data, test_label = left[test_idx], right[test_idx]
+
+    w = l2_rls_train(train_data, train_label)
 
     #Prediction
-    pred_right = l2_rls_predict(w, left[test_idx])
+    pred_right = l2_rls_predict(w, test_data)
 
     #Visualise predictions
-    faces_idx = rng.choice(test_idx.shape[0], 4, replace=False)
-    show_faces(join_left_right(left[test_idx][faces_idx], right[test_idx][faces_idx]), num_per_row=4)
-    show_faces(join_left_right(left[test_idx][faces_idx], pred_right[faces_idx]), num_per_row=4)
+    if display_faces:
+        faces_idx = rng.choice(test_idx.shape[0], 4, replace=False)
+        show_faces(join_left_right(test_data[faces_idx], test_label[faces_idx]), num_per_row=4)
+        show_faces(join_left_right(test_data[faces_idx], pred_right[faces_idx]), num_per_row=4)
+
+    #Mean absolute percentage error
+    print(f"MAPE: {mean_absolute_percentage_error(pred_right, test_label):.2f}%")
+
 
 def main():
     data, labels = load_data()
