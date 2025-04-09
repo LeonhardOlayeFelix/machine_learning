@@ -19,16 +19,12 @@ def split_face_data(data, labels, num_per_class=3):
 
 def l2_rls_train(train_data, train_labels, lmbd=0, multi=False):  # Add any other arguments here
     """
-    A summary of your function goes here.
-
     data: type and description of "data"
     labels: type and description of "labels"
     lmbd: type and description of "lmbd"
 
     Returns: type and description of the returned variable(s).
     """
-
-    # This is just to be consistent with the lecture notes.
 
     if multi:
         y = np.zeros((train_labels.shape[0], train_labels.max()))
@@ -57,8 +53,6 @@ def l2_rls_train(train_data, train_labels, lmbd=0, multi=False):  # Add any othe
 
 def l2_rls_predict(w, data):
     """
-    A summary of your function goes here.
-
     data: type and description of "data"
     w: type and description of "w"
 
@@ -117,7 +111,20 @@ def classify_faces_experiment_4(data, labels):
     predicted_y = l2_rls_predict(w, te_data)
     predicted_class = l2_rls_predict_class(predicted_y)
     confusion_matrix = create_confusion_matrix(predicted_class, te_label)
-    return confusion_matrix
+
+    #Accuracy
+    accuracy = (predicted_class == te_label).mean()
+    incorrect_indexes = np.where(predicted_class != te_label)
+    incorrect_labels = te_label[incorrect_indexes]
+
+    #Report
+    print(f"Dataset size: {len(data)}")
+    print(f"Train-Validation-Test data split: 40%-10%-50%")
+    print(f"l2 Lambda Hyperparameter: {lmbd:.2f}")
+    print(f"Accuracy: {accuracy*100:.2f}%")
+    print(f"Incorrect Labels (indexes): {incorrect_indexes[0]}")
+    print(f"Total Incorrect classifications: {len(incorrect_indexes[0])}")
+    print(f"Confusion Matrix:\n{confusion_matrix}")
 
 def main():
     data, labels = load_data()
@@ -125,7 +132,7 @@ def main():
     data = normalise_face_data(data)
     # tr_data, tr_label, te_data, te_label = split_face_data(data, labels)
     # print(l2_rls_train(tr_data, tr_label).shape)
-    print(classify_faces_experiment_4(data, labels))
+    classify_faces_experiment_4(data, labels)
 
 
 main()
