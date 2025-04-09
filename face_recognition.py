@@ -96,7 +96,7 @@ def select_hyperparameter(tr_data, tr_label, lambdas, num_trials_per_lambda, ver
         print(avg_accs)
     return lambdas[np.argmin(avg_accs)]
 
-def classify_faces_experiment_4(data, labels):
+def classify_faces_experiment(data, labels):
     tr_data, tr_label, te_data, te_label = split_face_data(data, labels, 5)
 
     #Hyperparameter selection
@@ -125,11 +125,17 @@ def classify_faces_experiment_4(data, labels):
     print(f"Total Incorrect classifications: {len(incorrect_indexes[0])}")
     print(f"Confusion Matrix:\n{confusion_matrix}")
 
+def face_completion_experiment(data, labels):
+    #Split data into left and right face
+    tr_data, tr_label, te_data, te_label = split_face_data(data, labels, 5)
+    tr_data, tr_label = split_left_right(tr_data)
+    te_data, te_label = split_left_right(te_data)
+
+
+
 def main():
     data, labels = load_data()
-
     data = normalise_face_data(data)
-    # tr_data, tr_label, te_data, te_label = split_face_data(data, labels)
-    # print(l2_rls_train(tr_data, tr_label).shape)
-    classify_faces_experiment_4(data, labels)
+
+    face_completion_experiment(data, labels)
 main()
