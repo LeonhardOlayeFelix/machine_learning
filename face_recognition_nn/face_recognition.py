@@ -70,7 +70,7 @@ def l2_rls_predict(w, data):
 def l2_rls_predict_class(predicted_y):
     return np.argmax(predicted_y, axis=1) + 1
 
-def select_hyperparameter(tr_data, tr_label, lambdas, num_trials_per_lambda, verbose=False):
+def select_l2_lambda_hyperparameter(tr_data, tr_label, lambdas, num_trials_per_lambda, verbose=False):
     accs = np.zeros((len(lambdas), num_trials_per_lambda))
 
     #Uses random subsampling to determine a choice of lambda
@@ -94,16 +94,55 @@ def select_hyperparameter(tr_data, tr_label, lambdas, num_trials_per_lambda, ver
 
     #Average error matrix over rows
     avg_accs = np.mean(accs, axis=1)
-    if verbose:
-        print(avg_accs)
-    return lambdas[np.argmin(avg_accs)]
+    #Average standard deviation of error matrix over rows
+    std_accs = np.std(accs, axis=1)
 
-def classify_faces_experiment(data, labels):
+    best_idx = np.argmin(avg_accs)
+    best_lambda = lambdas[best_idx]
+
+    if verbose:
+        print("Average error rates:", avg_accs)
+        print("Standard deviations:", std_accs)
+
+        plt.figure(figsize=(10, 6))
+
+        #plot all points in blue first include 'yerr=std_accs,' for error bars
+        plt.errorbar(lambdas, avg_accs, fmt='o',
+                     capsize=5, capthick=2, elinewidth=2, markersize=6,
+                     color='blue', alpha=0.7)
+
+        #highlight the best point in red include 'yerr=std_accs[best_idx],' for error bar
+        plt.errorbar(lambdas[best_idx], avg_accs[best_idx], yerr=std_accs[best_idx],
+                    fmt='o',
+                     capsize=5, capthick=2, elinewidth=2, markersize=8,
+                     color='red', alpha=1.0)
+
+        plt.plot(lambdas, avg_accs, '-', color='blue', alpha=0.3)
+
+        plt.xscale('log')
+
+        plt.xlabel('Lambda (regularization parameter)')
+        plt.ylabel('Average Error Rate')
+        plt.title('Error Rate vs. Lambda')
+        plt.grid(True, which="both", ls="--")
+
+        plt.annotate(f'λ = {best_lambda:.3f}\nErr = {avg_accs[best_idx]:.3f}',
+                     xy=(best_lambda, avg_accs[best_idx]),
+                     xytext=(10, 10), textcoords='offset points',
+                     bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+                     arrowprops=dict(arrowstyle='->'))
+
+        plt.tight_layout()
+        plt.show()
+
+    return best_lambda
+
+def classify_faces_experiment(data, labels, verbose=False):
     tr_data, tr_label, te_data, te_label = split_face_data(data, labels, 5)
 
     #Hyperparameter selection
-    lambda_candidates = np.logspace(-1, 1, num=6, endpoint=False)
-    lmbd = select_hyperparameter(tr_data, tr_label, lambda_candidates, 3)
+    lambda_candidates = np.logspace(-1, 1, num=50, endpoint=False)
+    lmbd = select_l2_lambda_hyperparameter(tr_data, tr_label, lambda_candidates, 10, verbose=verbose)
 
     #Training
     w = l2_rls_train(tr_data, tr_label, lmbd=lmbd, multi=True)
@@ -156,7 +195,7 @@ def main():
     data, labels = load_data()
     data = normalise_face_data(data)
 
-    #classify_faces_experiment(data, labels)
-    face_completion_experiment(data, labels, display_faces=True)
+    classify_faces_experiment(data, labels, verbose=True)
+    #face_completion_experiment(data, labels, display_faces=True)
 
 main()
