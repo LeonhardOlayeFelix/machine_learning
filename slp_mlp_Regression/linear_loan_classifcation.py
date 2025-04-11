@@ -32,11 +32,30 @@ def preprocess_loan_data(loan_data_full):
 
     return loan_data
 
+def plot_training(cost_all, accuracies):
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(cost_all)
+    plt.title('Hinge Loss Objective Function')
+    plt.xlabel('Iteration number')
+    plt.ylabel('Total Loss')
+
+    plt.subplot(1, 2, 2)
+    plt.plot(accuracies)
+    plt.title('Training Accuracy')
+    plt.xlabel('Iteration number')
+    plt.ylabel('Accuracy')
+    plt.ylim(0, 1)
+
+    plt.tight_layout()
+    plt.show()
 
 def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None
                     ):
     """
-    A summary of your function goes here.
+    This function trains the linear classifier through gradient descent. It uses the gradient of the hinge loss function
+    which is computed in the report. It also plots the objective function over the number of iterations.
 
     data: training data
     labels: training labels (boolean)
@@ -59,7 +78,8 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
 
     # Initialise arrays to store weights and cost at each iteration
     w_all = np.zeros((n_iters, X_tilde.shape[1]))
-    cost_all = np.zeros((n_iters, 1))
+    cost_all = np.zeros(n_iters)
+    accuracies = np.zeros(n_iters)
 
     # GD update of weights
     for i in range(n_iters):
@@ -88,9 +108,16 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
         cost_all[i] = total_hinge_loss
         w_all[i] = w
 
+        #calculate and store accuracy
+        predictions = np.sign(output)
+        accuracy = np.mean(predictions == y)
+        accuracies[i] = accuracy
+
+    plot_training(cost_all, accuracies)
+
     # Return model parameters.
-    #print(w_all)
-    print(cost_all)
+    # print(w_all[-1])
+    # print(cost_all[-1])
     return cost_all, w_all
 
 
