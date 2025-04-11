@@ -123,7 +123,7 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
 
 def linear_predict(data, w):
     """
-    A summary of your function goes here.
+    This function predicts the class label for each sample in data.
 
     data: test data
     w: model weights
@@ -131,8 +131,14 @@ def linear_predict(data, w):
     Returns the predicted labels.
     """
 
-    X_tilde = ...
-    y_pred = ...
+    ones = np.ones(data.shape[0])
+    X_tilde = np.insert(data, 0, ones, axis=1)
+
+    #raw score
+    y_pred = X_tilde@w
+
+    #label
+    y_pred = np.sign(y_pred)
 
     return y_pred
 
@@ -140,8 +146,8 @@ def main():
     notebook_start_time = time.time()
     loan_data_full = preprocess_loan_data(pd.read_csv("loan_data.csv"))
     train_X_cls, test_X_cls, train_y_cls, test_y_cls = split_data(loan_data_full)
-    linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None)
-
+    w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None)[1][-1]
+    y_pred = linear_predict(test_X_cls, w)
 
 
 main()
