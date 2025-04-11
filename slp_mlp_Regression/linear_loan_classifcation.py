@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import sklearn.model_selection
+from sklearn.metrics import f1_score
 from sklearn.preprocessing import StandardScaler
 
 def split_data(loan_data):
@@ -19,6 +20,7 @@ def split_data(loan_data):
     scaler = StandardScaler()
 
     train_X_cls = scaler.fit_transform(train_X_cls)
+    test_X_cls = scaler.transform(test_X_cls)
 
     return train_X_cls, test_X_cls, train_y_cls, test_y_cls
 
@@ -120,7 +122,6 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
     # print(cost_all[-1])
     return cost_all, w_all
 
-
 def linear_predict(data, w):
     """
     This function predicts the class label for each sample in data.
@@ -138,16 +139,36 @@ def linear_predict(data, w):
     y_pred = X_tilde@w
 
     #label
-    y_pred = np.sign(y_pred)
-
+    y_pred = (y_pred >= 0).astype(int)
     return y_pred
+
+def F1_score(y_pred, y_labels):
+    true_pos = np.sum((y_labels == 1) & (y_pred == 1))
+    false_pos = np.sum((y_labels == 0) & (y_pred == 1))
+    false_neg = np.sum((y_labels == 1) & (y_pred == 0))
+
+    precision = true_pos / (true_pos + false_pos + 1e-10)
+    recall = true_pos / (true_pos + false_neg + 1e-10)
+    f1 = 2 * (precision * recall) / (precision + recall + 1e-10)
+    return f1
 
 def main():
     notebook_start_time = time.time()
     loan_data_full = preprocess_loan_data(pd.read_csv("loan_data.csv"))
     train_X_cls, test_X_cls, train_y_cls, test_y_cls = split_data(loan_data_full)
-    w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None)[1][-1]
+
+    w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=123)[1][-1]
+
     y_pred = linear_predict(test_X_cls, w)
 
+    accuracy = np.mean(y_pred == test_y_cls)
+
+    f1 = F1_score(y_pred, test_y_cls)
+
+    print(accuracy, f1)
+    print(f"1: {np.sum(y_pred == 1)}, 0: {np.sum(y_pred == 0)}")
+    print(f"1: {np.sum(test_y_cls == 1)}, 0: {np.sum(test_y_cls == 0)}")
+
+    print(test_X_cls.shape)
 
 main()
