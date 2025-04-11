@@ -20,17 +20,16 @@ def split_data(loan_data):
     scaler = StandardScaler()
 
     train_X_cls = scaler.fit_transform(train_X_cls)
-    test_X_cls = scaler.transform(test_X_cls)
+    test_X_cls = scaler.fit_transform(test_X_cls)
 
     return train_X_cls, test_X_cls, train_y_cls, test_y_cls
 
 def preprocess_loan_data(loan_data_full):
-
-    #One hot encode categorical columns
     loan_data = pd.get_dummies(loan_data_full, columns=['person_home_ownership', 'loan_intent', 'person_education',
                                                         'previous_loan_defaults_on_file', 'person_gender'])
-    #Remove redundancy.
+
     loan_data = loan_data.drop(columns=['person_gender_male', 'previous_loan_defaults_on_file_No'])
+    loan_data['loan_status'] = loan_data['loan_status'].replace({0: -1, 1: 1})
 
     return loan_data
 
@@ -73,7 +72,7 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
     # Create design matrix and labels
     ones = np.ones(data.shape[0])
     X_tilde = np.insert(data, 0, ones, axis=1)
-    y = 2 * labels.astype(int) - 1
+    y = labels.astype(int)
 
     # Weight initialisation: use e.g. rng.standard_normal() or all zeros
     w = rng.standard_normal(X_tilde.shape[1])
@@ -139,8 +138,10 @@ def linear_predict(data, w):
     y_pred = X_tilde@w
 
     #label
-    y_pred = (y_pred >= 0).astype(int)
+    y_pred = np.sign(y_pred)
+
     return y_pred
+
 
 def F1_score(y_pred, y_labels):
     true_pos = np.sum((y_labels == 1) & (y_pred == 1))
@@ -165,10 +166,7 @@ def main():
 
     f1 = F1_score(y_pred, test_y_cls)
 
-    print(accuracy, f1)
-    print(f"1: {np.sum(y_pred == 1)}, 0: {np.sum(y_pred == 0)}")
-    print(f"1: {np.sum(test_y_cls == 1)}, 0: {np.sum(test_y_cls == 0)}")
+    print(f"Accuracy: {accuracy}\nF1 Score: {f1}")
 
-    print(test_X_cls.shape)
 
 main()
