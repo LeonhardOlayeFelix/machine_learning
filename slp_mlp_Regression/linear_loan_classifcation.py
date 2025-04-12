@@ -199,7 +199,7 @@ def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
         y_pred = linear_predict(test_X_cls, w)
         accuracy = np.mean(y_pred == test_y_cls)
         f1 = F1_score(y_pred, test_y_cls)
-        print(f"learning rate: {Learning_rate}, Accuracy: {accuracy}, F1 Score: {f1}")
+        print(f"learning rate: {learning_rate}, Accuracy: {accuracy}, F1 Score: {f1}")
 
         results.append({
             'learning_rate': learning_rate,
