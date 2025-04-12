@@ -177,6 +177,17 @@ def experiment_plot_cost_against_mu(results):
     plt.tight_layout(pad=2.5, h_pad=2.0, w_pad=2.0)
     plt.show()
 
+def experiment_plot_accuracy(results):
+    plt.figure(figsize=(10, 4))
+    plt.semilogx([result['learning_rate'] for result in results], [result['final_accuracy'] for result in results], 'o-', label='Accuracy Rate')
+    plt.semilogx([result['learning_rate'] for result in results], [result['f1'] for result in results], 's-', label='F1 Score')
+    plt.xlabel('Learning Rate (η)')
+    plt.ylabel('Metric Value')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.title('Test Performance vs Learning Rate')
+    plt.show()
+
 def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls):
     n_iters = 200
     c = 0.2
@@ -188,7 +199,7 @@ def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
         y_pred = linear_predict(test_X_cls, w)
         accuracy = np.mean(y_pred == test_y_cls)
         f1 = F1_score(y_pred, test_y_cls)
-        print(learning_rate, accuracy)
+        print(f"learning rate: {Learning_rate}, Accuracy: {accuracy}, F1 Score: {f1}")
 
         results.append({
             'learning_rate': learning_rate,
@@ -199,6 +210,7 @@ def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
         })
 
     experiment_plot_cost_against_mu(results)
+    experiment_plot_accuracy(results)
 
 def main():
     notebook_start_time = time.time()
