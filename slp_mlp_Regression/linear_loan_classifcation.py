@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import sklearn.model_selection
+from pandas.core.algorithms import nunique_ints
 from sklearn.metrics import f1_score
 from sklearn.preprocessing import StandardScaler
 
@@ -52,7 +53,7 @@ def plot_training(cost_all, accuracies):
     plt.tight_layout()
     plt.show()
 
-def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None
+def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None, plot=True
                     ):
     """
     This function trains the linear classifier through gradient descent. It uses the gradient of the hinge loss function
@@ -114,7 +115,8 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
         accuracy = np.mean(predictions == y)
         accuracies[i] = accuracy
 
-    plot_training(cost_all, accuracies)
+    if plot:
+        plot_training(cost_all, accuracies)
 
     # Return model parameters.
     # print(w_all[-1])
@@ -145,28 +147,75 @@ def linear_predict(data, w):
 
 def F1_score(y_pred, y_labels):
     true_pos = np.sum((y_labels == 1) & (y_pred == 1))
-    false_pos = np.sum((y_labels == 0) & (y_pred == 1))
-    false_neg = np.sum((y_labels == 1) & (y_pred == 0))
+    false_pos = np.sum((y_labels == -1) & (y_pred == 1))
+    false_neg = np.sum((y_labels == 1) & (y_pred == -1))
 
     precision = true_pos / (true_pos + false_pos + 1e-10)
     recall = true_pos / (true_pos + false_neg + 1e-10)
     f1 = 2 * (precision * recall) / (precision + recall + 1e-10)
     return f1
 
+def experiment_plot_cost_against_mu(results):
+    n_cols = 2
+    n_rows = int(np.ceil(len(results) / n_cols))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 3 * n_rows))
+
+    #flatten axes array for iteration
+    axes = axes.ravel()
+
+    #plot each learning rate's cost trajectory
+    for idx, result in enumerate(results):
+        ax = axes[idx]
+        ax.plot(result['cost_all'])
+
+        #title with metrics
+        ax.set_title(f"η = {result['learning_rate']:.1e}\nFinal Loss: {result['cost_all'][-1]:.2f}",
+                     fontsize=10, pad=6)
+
+        ax.grid(True, linestyle=':', alpha=0.8)
+
+    plt.tight_layout(pad=2.5, h_pad=2.0, w_pad=2.0)
+    plt.show()
+
+def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls):
+    n_iters = 200
+    c = 0.2
+
+    results = []
+    for learning_rate in learning_rates:
+        cost_all, w_all = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=learning_rate, random_state=123, plot=False)
+        w=w_all[-1]
+        y_pred = linear_predict(test_X_cls, w)
+        accuracy = np.mean(y_pred == test_y_cls)
+        f1 = F1_score(y_pred, test_y_cls)
+        print(learning_rate, accuracy)
+
+        results.append({
+            'learning_rate': learning_rate,
+            'final_loss': cost_all[-1],
+            'final_accuracy': accuracy,
+            'f1': f1,
+            'cost_all': cost_all,
+        })
+
+    experiment_plot_cost_against_mu(results)
+
 def main():
     notebook_start_time = time.time()
     loan_data_full = preprocess_loan_data(pd.read_csv("loan_data.csv"))
     train_X_cls, test_X_cls, train_y_cls, test_y_cls = split_data(loan_data_full)
+    #
+    # w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=123)[1][-1]
+    #
+    # y_pred = linear_predict(test_X_cls, w)
+    #
+    # accuracy = np.mean(y_pred == test_y_cls)
+    #
+    # f1 = F1_score(y_pred, test_y_cls)
+    #
+    # print(f"Accuracy: {accuracy}\nF1 Score: {f1}")
 
-    w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=123)[1][-1]
-
-    y_pred = linear_predict(test_X_cls, w)
-
-    accuracy = np.mean(y_pred == test_y_cls)
-
-    f1 = F1_score(y_pred, test_y_cls)
-
-    print(f"Accuracy: {accuracy}\nF1 Score: {f1}")
-
+    learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1]
+    experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
 
 main()
