@@ -51,9 +51,10 @@ def plot_training(cost_all, accuracies):
     plt.ylim(0, 1)
 
     plt.tight_layout()
+    plt.savefig("training_plot.png")
     plt.show()
 
-def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None, plot=True
+def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, random_state=None, plot=True, verbose=False
                     ):
     """
     This function trains the linear classifier through gradient descent. It uses the gradient of the hinge loss function
@@ -91,7 +92,6 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
         #this part calculates the summand of the hinge loss formula
         marginals = y * output
         marginal_hinge_losses = np.maximum(0, 1 - marginals)
-
         #regularisation term
         rgl_term = 0.5 * w.T @ w
 
@@ -102,7 +102,6 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
         grad = np.zeros_like(w)
         misclassified = (marginals < 1)
         grad = -y[misclassified]@X_tilde[misclassified] * c + w
-
         # Weight update
         w = w - learning_rate*grad
 
@@ -114,7 +113,8 @@ def linear_gd_train(data, labels, c=0.2, n_iters=200, learning_rate=0.0001, rand
         predictions = np.sign(output)
         accuracy = np.mean(predictions == y)
         accuracies[i] = accuracy
-
+    if verbose:
+        print("Train accuracy: ", accuracies[-1])
     if plot:
         plot_training(cost_all, accuracies)
 
@@ -175,7 +175,9 @@ def experiment_plot_cost_against_mu(results):
         ax.grid(True, linestyle=':', alpha=0.8)
 
     plt.tight_layout(pad=2.5, h_pad=2.0, w_pad=2.0)
+    plt.savefig("cost_against_mu.png")
     plt.show()
+
 
 def experiment_plot_accuracy(results):
     plt.figure(figsize=(10, 4))
@@ -186,7 +188,9 @@ def experiment_plot_accuracy(results):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.title('Test Performance vs Learning Rate')
+    plt.savefig("Plot_Accuracy.png")
     plt.show()
+
 
 def experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls):
     n_iters = 200
@@ -216,8 +220,8 @@ def main():
     notebook_start_time = time.time()
     loan_data_full = preprocess_loan_data(pd.read_csv("loan_data.csv"))
     train_X_cls, test_X_cls, train_y_cls, test_y_cls = split_data(loan_data_full)
-    #
-    # w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=123)[1][-1]
+
+    # w = linear_gd_train(train_X_cls, train_y_cls, c=0.2, n_iters=200, learning_rate=0.0001, random_state=123, verbose=True)[1][-1]
     #
     # y_pred = linear_predict(test_X_cls, w)
     #
@@ -225,7 +229,7 @@ def main():
     #
     # f1 = F1_score(y_pred, test_y_cls)
     #
-    # print(f"Accuracy: {accuracy}\nF1 Score: {f1}")
+    # print(f"Test Accuracy: {accuracy}\nF1 Score: {f1}")
 
     learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1]
     experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
