@@ -1,3 +1,5 @@
+from tabnanny import verbose
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -135,29 +137,36 @@ def feature_importance_experiment(top_ns=None):
     r2s = []
 
     #Best model determined from earlier
-    best_mlp_params = {'activation': 'relu', 'hidden_layer_sizes': (100,), 'max_iter': 200}
+    best_mlp_params = {'activation': 'relu', 'hidden_layer_sizes': (100,), 'max_iter': 200, 'verbose': 0}
 
-    # First the MLP determined from earlier model selection on all features
+    #List the features in order of importance
+    print(f"\nFeatures in order of importance:")
+    top_features_idx = np.argsort(importance_scores)
+    for i, idx in enumerate(top_features_idx[::-1]):
+        print(f"{i + 1}. {feature_names[idx]} (score: {importance_scores[idx]:.4f})")
+
+
+    # First train and evaluate the MLP determined from earlier model selection on all features
     mlp_full = MLPRegressor(**best_mlp_params, random_state=445)
     mlp_full.fit(train_X_regr, train_y_regr)
     full_pred = mlp_full.predict(test_X_regr)
-    print(f"\nMLP (ALL features) MSE:{mean_squared_error(test_y_regr, full_pred):.4f}")
-    print(f"MLP (ALL features) F1: {r2_score(test_y_regr, full_pred):.4f}")
+    full_model_acc = mean_squared_error(test_y_regr, full_pred)
+    full_r2 = r2_score(test_y_regr, full_pred)
+    print("Testing model performance on different feature sets...")
+    print(f"\nMLP (ALL features) MSE:{full_model_acc:.4f}")
+    print(f"MLP (ALL features) F1: {full_r2:.4f}")
 
     for top_n in top_ns:
 
-        print(f"\n==================Top {top_n} importance scores==================")
+        print(f"\n==================Top {top_n} features importance scores==================")
         # Select important features
-        top_features_idx = np.argsort(importance_scores)[-top_n:]
-        print(f"\nTop {top_n} features:")
-        for i, idx in enumerate(top_features_idx[::-1]):
-            print(f"{i + 1}. {feature_names[idx]} (score: {importance_scores[idx]:.4f})")
 
+        top_features_idx = np.argsort(importance_scores)[-top_n:]
         # Validate the features
         train_X_reduced = train_X_regr[:, top_features_idx]
         test_X_reduced = test_X_regr[:, top_features_idx]
 
-        #Train MLP on reduced feature set and report
+        #Train and evaluate MLP on reduced feature set
         mlp_reduced = MLPRegressor(**best_mlp_params, random_state=445)
         mlp_reduced.fit(train_X_reduced, train_y_regr)
         reduced_pred = mlp_reduced.predict(test_X_reduced)
@@ -168,21 +177,12 @@ def feature_importance_experiment(top_ns=None):
         accs.append(acc)
         r2s.append(r2)
 
+    plot_feature_selection_results(top_ns, accs, r2s, full_model_acc, full_r2)
 
 def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model_r2):
-    """
-    Plots MSE and R² across different feature subset sizes
-
-    Parameters:
-    - top_ns: List of feature counts tested (e.g., [3, 6, 9, 12, 15])
-    - accs: List of corresponding MSE values
-    - r2s: List of corresponding R² values
-    - full_model_mse: MSE of full-feature model (reference line)
-    - full_model_r2: R² of full-feature model (reference line)
-    """
     plt.figure(figsize=(12, 5))
 
-    # MSE Plot (left)
+    #MSE plot
     plt.subplot(1, 2, 1)
     plt.plot(top_ns, accs, 'bo-', label='Reduced Model')
     plt.axhline(y=full_model_mse, color='r', linestyle='--', label='Full Model')
@@ -190,7 +190,6 @@ def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model
     plt.ylabel('MSE')
     plt.title('MSE vs Feature Subset Size')
     plt.legend()
-    plt.grid(True)
 
     # R² Plot (right)
     plt.subplot(1, 2, 2)
@@ -200,10 +199,10 @@ def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model
     plt.ylabel('R² Score')
     plt.title('R² vs Feature Subset Size')
     plt.legend()
-    plt.grid(True)
 
     plt.tight_layout()
     plt.show()
+    plt.savefig("feature_selection_results.png")
 
 def main():
     #select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr)
