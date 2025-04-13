@@ -126,18 +126,11 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
 
 def feature_importance_experiment():
     feature_names = soybean_data_processed.drop(columns=[target_col]).columns.values
-
+    feature_importance_scores = feature_importance_score_cal(train_X_regr, test_X_regr, train_y_regr, test_y_regr, feature_names)
     pass
 
 
 def main():
-
-    #Perform data split
-    train_X_regr, test_X_regr, train_y_regr, test_y_regr = sklearn.model_selection.train_test_split(regression_data,regression_targets, test_size=0.15)
-    scaler = StandardScaler()
-    train_X_regr = scaler.fit_transform(train_X_regr)
-    test_X_regr = scaler.transform(test_X_regr)
-
     #select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr)
 
     # best_model = MLPRegressor(
@@ -147,12 +140,12 @@ def main():
     #     early_stopping=True,  # Stop if no improvement
     #     random_state=42
     # )
-    # best_model.fit(train_X_regr, train_y_regr)
-    # train_pred = best_model.predict(train_X_regr)
-    # test_pred = best_model.predict(test_X_regr)
-    #
-    # print("Train MSE:", mean_squared_error(train_y_regr, train_pred))
-    # print("Test MSE:", mean_squared_error(test_y_regr, test_pred))
+    best_model.fit(train_X_regr, train_y_regr)
+    train_pred = best_model.predict(train_X_regr)
+    test_pred = best_model.predict(test_X_regr)
+
+    print("Train MSE:", mean_squared_error(train_y_regr, train_pred))
+    print("Test MSE:", mean_squared_error(test_y_regr, test_pred))
 
     feature_importance_experiment()
 
@@ -164,5 +157,14 @@ target_col = 'Seed Yield per Unit Area (SYUA)'
 regression_targets = soybean_data_processed[target_col].to_numpy()
 soybean_data = soybean_data_processed.drop(columns=[target_col])
 regression_data = soybean_data.to_numpy()
+
+# Perform data split
+train_X_regr, test_X_regr, train_y_regr, test_y_regr = sklearn.model_selection.train_test_split(regression_data,
+                                                                                                regression_targets,
+                                                                                                test_size=0.15)
+#Standardise
+scaler = StandardScaler()
+train_X_regr = scaler.fit_transform(train_X_regr)
+test_X_regr = scaler.transform(test_X_regr)
 
 main()
