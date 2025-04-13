@@ -50,22 +50,21 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
     grid_search = GridSearchCV(
         estimator=MLPRegressor(random_state=42),
         param_grid=param_grid,
-        cv=5,  # 5-fold cross-validation
+        cv=4,
         scoring='neg_mean_squared_error',
-        verbose=1,
+        verbose=0,
         n_jobs=-1
     )
     grid_search.fit(train_X_regr, train_y_regr)
 
     #Report the best parameters and CV results
     best_model = grid_search.best_estimator_
-
-    print("Best parameters found: ", grid_search.best_params_)
-    print("Best CV MSE: {:.4f}".format(-grid_search.best_score_))
-
     cv_results = grid_search.cv_results_
     best_index = grid_search.best_index_
-    print("Std. Dev. of CV MSE: {:.4f}".format(cv_results['std_test_score'][best_index]))
+
+    print(f"Best parameters found: {grid_search.best_params_}")
+    print(f"Best CV MSE: {-grid_search.best_score_:.4f}")
+    print(f"Std. Dev. of CV MSE: {cv_results['std_test_score'][best_index]:.4f}")
 
     #Report model performance with best parameters
     best_model.fit(train_X_regr, train_y_regr)
@@ -74,16 +73,16 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
     test_r2 = r2_score(test_y_regr, test_pred)
 
     print("\nTest set performance:")
-    print("MSE: {:.4f}".format(test_mse))
-    print("R² score: {:.4f}".format(test_r2))
+    print(f"MSE: {test_mse:.4f}")
+    print(f"R² score: {test_r2:.4f}")
 
     train_pred = best_model.predict(train_X_regr)
     train_mse = mean_squared_error(train_y_regr, train_pred)
     train_r2 = r2_score(train_y_regr, train_pred)
 
     print("\nTraining set performance (for reference):")
-    print("MSE: {:.4f}".format(train_mse))
-    print("R² score: {:.4f}".format(train_r2))
+    print(f"MSE: {train_mse:.4f}")
+    print(f"R² score: {train_r2:.4f}")
 
 def main():
     soybean_data_full = pd.read_csv("soybean_data.csv")
