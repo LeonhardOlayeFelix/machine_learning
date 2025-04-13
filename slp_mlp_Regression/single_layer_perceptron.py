@@ -233,5 +233,3 @@ def main():
 
     learning_rates = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1]
     experiment(learning_rates, train_X_cls, test_X_cls, train_y_cls, test_y_cls)
-
-main()
