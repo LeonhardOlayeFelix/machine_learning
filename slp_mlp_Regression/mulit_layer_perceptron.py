@@ -1,17 +1,20 @@
-from tabnanny import verbose
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import sklearn.model_selection
-from pandas.core.algorithms import nunique_ints
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_squared_error, r2_score, f1_score
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, RobustScaler
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
+import model_eval_utils
+from slp_mlp_Regression.model_eval_utils import run_model
+
 
 def preprocess_data(soybean_data_full1):
     soybean_data_full1 = soybean_data_full.copy()
@@ -204,24 +207,43 @@ def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model
     plt.show()
     plt.savefig("feature_selection_results.png")
 
+def get_model_pipeline():
+    #first deal with missing data
+    imputer = SimpleImputer(strategy='median')
+    numeric_transformer = Pipeline([
+        ('imputer', imputer), #this line will fill any missing data with the median in that column
+    ])
+    #apply transformations (imputations) to each column
+    cols_to_transform = np.arange(soybean_data_processed.shape[1] - 1)
+    preprocessor = ColumnTransformer([
+        ('num', numeric_transformer, cols_to_transform)
+    ])
+
+    #now define model (selected hyperparameters)
+    mlp = MLPRegressor(
+        activation='relu',
+        hidden_layer_sizes=(100,),
+        max_iter=200,
+        early_stopping=True,
+        random_state=42
+    )
+
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('mlp', mlp)
+    ])
+
+    #train
+    pipeline.fit(train_X_regr, train_y_regr)
+
+    return pipeline
+
 def main():
-    #select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr)
+    final_model = get_model_pipeline()
+    student_username = "s89990lo"
+    model_eval_utils.save_model(student_username, final_model)
+    run_model(student_username, test_X_regr, test_y_regr)
 
-    # best_model = MLPRegressor(
-    #     hidden_layer_sizes=(100,),
-    #     activation='relu',
-    #     max_iter=200,
-    #     early_stopping=True,  # Stop if no improvement
-    #     random_state=445
-    # )
-    # best_model.fit(train_X_regr, train_y_regr)
-    # train_pred = best_model.predict(train_X_regr)
-    # test_pred = best_model.predict(test_X_regr)
-    #
-    # print("Train MSE:", mean_squared_error(train_y_regr, train_pred))
-    # print("Test MSE:", mean_squared_error(test_y_regr, test_pred))
-
-    feature_importance_experiment()
 
 soybean_data_full = pd.read_csv("soybean_data.csv")
 soybean_data_processed = preprocess_data(soybean_data_full)
