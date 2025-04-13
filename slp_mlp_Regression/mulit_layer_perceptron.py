@@ -126,7 +126,7 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
 
 def feature_importance_experiment():
     feature_names = soybean_data_processed.drop(columns=[target_col]).columns.values
-    feature_importance_scores = feature_importance_score_cal(train_X_regr, test_X_regr, train_y_regr, test_y_regr, feature_names)
+    feature_importance_scores = feature_importance_score_cal(train_X_regr, train_y_regr, test_X_regr, test_y_regr, feature_names)
     pass
 
 
@@ -140,12 +140,12 @@ def main():
     #     early_stopping=True,  # Stop if no improvement
     #     random_state=42
     # )
-    best_model.fit(train_X_regr, train_y_regr)
-    train_pred = best_model.predict(train_X_regr)
-    test_pred = best_model.predict(test_X_regr)
-
-    print("Train MSE:", mean_squared_error(train_y_regr, train_pred))
-    print("Test MSE:", mean_squared_error(test_y_regr, test_pred))
+    # best_model.fit(train_X_regr, train_y_regr)
+    # train_pred = best_model.predict(train_X_regr)
+    # test_pred = best_model.predict(test_X_regr)
+    #
+    # print("Train MSE:", mean_squared_error(train_y_regr, train_pred))
+    # print("Test MSE:", mean_squared_error(test_y_regr, test_pred))
 
     feature_importance_experiment()
 
