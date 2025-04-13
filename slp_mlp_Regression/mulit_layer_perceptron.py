@@ -238,11 +238,16 @@ def get_model_pipeline():
 
     return pipeline
 
-def main():
+def save_model(run=False):
     final_model = get_model_pipeline()
     student_username = "s89990lo"
     model_eval_utils.save_model(student_username, final_model)
-    run_model(student_username, test_X_regr, test_y_regr)
+    if run:
+        run_model(student_username, test_X_regr, test_y_regr)
+
+def main():
+
+    save_model(True)
 
 
 soybean_data_full = pd.read_csv("soybean_data.csv")
