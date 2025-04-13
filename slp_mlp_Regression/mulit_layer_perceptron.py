@@ -6,35 +6,35 @@ import sklearn.model_selection
 from pandas.core.algorithms import nunique_ints
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, f1_score
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
 
-def preprocess_data(soybean_data_full):
-    soybean_data_processed = soybean_data_full.copy()
+def preprocess_data(soybean_data_full1):
+    soybean_data_full1 = soybean_data_full.copy()
 
     encoder = OneHotEncoder()
 
     #Extract the genotype and one-hot encode it
     genotypes = encoder.fit_transform(soybean_data_full['Parameters'].str.extract(r'G(\d)')).toarray()
-    soybean_data_processed = pd.concat([soybean_data_processed, pd.DataFrame(genotypes, columns=[f'G{i}' for i in range(1, 7)])], axis=1)
+    soybean_data_full1 = pd.concat([soybean_data_full1, pd.DataFrame(genotypes, columns=[f'G{i}' for i in range(1, 7)])], axis=1)
 
     #Extract the salicylic acid treatment and encode it as 0, 250 mg, or 450 mg
     #1 = 250 mg, 2 = 450 mg, 3 = control
     salicylic_acid = soybean_data_full['Parameters'].str.extract(r'C(\d+)').astype(float)
     salicylic_acid = salicylic_acid.replace({1: 250, 2: 450, 3: 0})
-    soybean_data_processed['Salicylic acid (mg)'] = salicylic_acid
+    soybean_data_full1['Salicylic acid (mg)'] = salicylic_acid
 
     #Extract the water stress treatment and encode it as .05 or .7 of field capacity
     water_stress = soybean_data_full['Parameters'].str.extract(r'S(\d)').astype(float)
     water_stress = water_stress.replace({1: .05, 2: .7})
-    soybean_data_processed['Water Stress (pct field capacity)'] = water_stress
+    soybean_data_full1['Water Stress (pct field capacity)'] = water_stress
 
     #Drop the original 'Parameters' column as well as 'Random' column
-    soybean_data_processed.drop(columns=['Parameters', 'Random '], inplace=True)
+    soybean_data_full1.drop(columns=['Parameters', 'Random '], inplace=True)
 
-    return soybean_data_processed
+    return soybean_data_full1
 
 def feature_importance_score_cal(train_X, train_y, test_X, test_y, feature_names):
     #### Train the GradientBoostingRegressor
@@ -44,7 +44,7 @@ def feature_importance_score_cal(train_X, train_y, test_X, test_y, feature_names
         'max_depth': 5,
         'subsample': 0.7,
     }
-    gbr = GradientBoostingRegressor(**params, random_state=42)
+    gbr = GradientBoostingRegressor(**params, random_state=445)
     # fit on training data, apply to test data
     gbr.fit(train_X, train_y)
     test_mse = mean_squared_error(test_y, gbr.predict(test_X))
@@ -62,7 +62,7 @@ def feature_importance_score_cal(train_X, train_y, test_X, test_y, feature_names
 
     ## Box plot showing the variance of feature importance scores
     result = permutation_importance(
-        gbr, test_X, test_y, n_repeats=10, random_state=42, n_jobs=2
+        gbr, test_X, test_y, n_repeats=10, random_state=445, n_jobs=2
     )
     sorted_idx = result.importances_mean.argsort()
     plt.subplot(1, 2, 2)
@@ -76,7 +76,7 @@ def feature_importance_score_cal(train_X, train_y, test_X, test_y, feature_names
     plt.show()
     return feature_importance_score
 
-def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
+def select_model():
     #Define MLP model
     param_grid = [
         {
@@ -88,7 +88,7 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
 
     #Initialise GridSearchCV and fit
     grid_search = GridSearchCV(
-        estimator=MLPRegressor(random_state=42),
+        estimator=MLPRegressor(random_state=445),
         param_grid=param_grid,
         cv=4,
         scoring='neg_mean_squared_error',
@@ -124,11 +124,86 @@ def select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr):
     print(f"MSE: {train_mse:.4f}")
     print(f"R² score: {train_r2:.4f}")
 
-def feature_importance_experiment():
-    feature_names = soybean_data_processed.drop(columns=[target_col]).columns.values
-    feature_importance_scores = feature_importance_score_cal(train_X_regr, train_y_regr, test_X_regr, test_y_regr, feature_names)
-    pass
+def feature_importance_experiment(top_ns=None):
+    # Calculate feature importance scores using feature_importance_score_cal()
+    if top_ns is None:
+        top_ns = [3, 6, 9, 12, 15]
 
+    feature_names = soybean_data_processed.drop(columns=[target_col]).columns.values
+    importance_scores = feature_importance_score_cal(train_X_regr, train_y_regr, test_X_regr, test_y_regr, feature_names)
+    accs = []
+    r2s = []
+
+    #Best model determined from earlier
+    best_mlp_params = {'activation': 'relu', 'hidden_layer_sizes': (100,), 'max_iter': 200}
+
+    # First the MLP determined from earlier model selection on all features
+    mlp_full = MLPRegressor(**best_mlp_params, random_state=445)
+    mlp_full.fit(train_X_regr, train_y_regr)
+    full_pred = mlp_full.predict(test_X_regr)
+    print(f"\nMLP (ALL features) MSE:{mean_squared_error(test_y_regr, full_pred):.4f}")
+    print(f"MLP (ALL features) F1: {r2_score(test_y_regr, full_pred):.4f}")
+
+    for top_n in top_ns:
+
+        print(f"\n==================Top {top_n} importance scores==================")
+        # Select important features
+        top_features_idx = np.argsort(importance_scores)[-top_n:]
+        print(f"\nTop {top_n} features:")
+        for i, idx in enumerate(top_features_idx[::-1]):
+            print(f"{i + 1}. {feature_names[idx]} (score: {importance_scores[idx]:.4f})")
+
+        # Validate the features
+        train_X_reduced = train_X_regr[:, top_features_idx]
+        test_X_reduced = test_X_regr[:, top_features_idx]
+
+        #Train MLP on reduced feature set and report
+        mlp_reduced = MLPRegressor(**best_mlp_params, random_state=445)
+        mlp_reduced.fit(train_X_reduced, train_y_regr)
+        reduced_pred = mlp_reduced.predict(test_X_reduced)
+        acc = mean_squared_error(test_y_regr, reduced_pred)
+        r2 = r2_score(test_y_regr, reduced_pred)
+        print(f"\nMLP (Top {top_n} features) MSE:{acc:.4f}")
+        print(f"MLP (Top {top_n} features) F1: {r2:.4f}")
+        accs.append(acc)
+        r2s.append(r2)
+
+
+def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model_r2):
+    """
+    Plots MSE and R² across different feature subset sizes
+
+    Parameters:
+    - top_ns: List of feature counts tested (e.g., [3, 6, 9, 12, 15])
+    - accs: List of corresponding MSE values
+    - r2s: List of corresponding R² values
+    - full_model_mse: MSE of full-feature model (reference line)
+    - full_model_r2: R² of full-feature model (reference line)
+    """
+    plt.figure(figsize=(12, 5))
+
+    # MSE Plot (left)
+    plt.subplot(1, 2, 1)
+    plt.plot(top_ns, accs, 'bo-', label='Reduced Model')
+    plt.axhline(y=full_model_mse, color='r', linestyle='--', label='Full Model')
+    plt.xlabel('Number of Features')
+    plt.ylabel('MSE')
+    plt.title('MSE vs Feature Subset Size')
+    plt.legend()
+    plt.grid(True)
+
+    # R² Plot (right)
+    plt.subplot(1, 2, 2)
+    plt.plot(top_ns, r2s, 'go-', label='Reduced Model')
+    plt.axhline(y=full_model_r2, color='r', linestyle='--', label='Full Model')
+    plt.xlabel('Number of Features')
+    plt.ylabel('R² Score')
+    plt.title('R² vs Feature Subset Size')
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
 
 def main():
     #select_model(train_X_regr, test_X_regr, train_y_regr, test_y_regr)
@@ -138,7 +213,7 @@ def main():
     #     activation='relu',
     #     max_iter=200,
     #     early_stopping=True,  # Stop if no improvement
-    #     random_state=42
+    #     random_state=445
     # )
     # best_model.fit(train_X_regr, train_y_regr)
     # train_pred = best_model.predict(train_X_regr)
