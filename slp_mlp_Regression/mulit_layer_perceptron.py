@@ -5,6 +5,7 @@ import time
 import sklearn.model_selection
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_squared_error, r2_score, f1_score
@@ -204,28 +205,29 @@ def plot_feature_selection_results(top_ns, accs, r2s, full_model_mse, full_model
     plt.legend()
 
     plt.tight_layout()
-    plt.show()
     plt.savefig("feature_selection_results.png")
+    plt.show()
+
 
 def get_model_pipeline():
-    #first deal with missing data
-    imputer = SimpleImputer(strategy='median')
+    #preprocessing
     numeric_transformer = Pipeline([
-        ('imputer', imputer), #this line will fill any missing data with the median in that column
+        ('imputer', SimpleImputer(strategy='median')),
+        ('feature_selector', SelectKBest(score_func=f_regression, k=9))
     ])
-    #apply transformations (imputations) to each column
+
+    #Apply transformations to all feature columns
     cols_to_transform = np.arange(soybean_data_processed.shape[1] - 1)
     preprocessor = ColumnTransformer([
         ('num', numeric_transformer, cols_to_transform)
     ])
 
-    #now define model (selected hyperparameters)
     mlp = MLPRegressor(
         activation='relu',
         hidden_layer_sizes=(100,),
         max_iter=200,
         early_stopping=True,
-        random_state=42
+        random_state=445
     )
 
     pipeline = Pipeline([
@@ -233,7 +235,6 @@ def get_model_pipeline():
         ('mlp', mlp)
     ])
 
-    #train
     pipeline.fit(train_X_regr, train_y_regr)
 
     return pipeline
